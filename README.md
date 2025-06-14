@@ -1,13 +1,12 @@
 # Feedback Portal
 
-Feedback Portal is a web application built with React and Vite that allows users to submit a new feedback form and view feedbacks of an existing form. The application is structured to provide a seamless user experience with a clean interface for both submitting feedback form and reviewing its feedbacks.
+The Feedback Portal is a web application built using React and Vite that allows users to create a new feedback form associated with a specific package and view feedback from an existing form. The application is built to provide a seamless user experience with a clean interface for both creating the feedback form and reviewing its responses.
 
 ## Features
 
 - **Feedback Form Creation**: Users can create a new feedback-form through a user-friendly form.
 - **Feedbacks Overview**: A dashboard that displays all submitted feedbacks, allowing users to review and analyze feedback data.
 - **Disable/Enable Feedback Form**: Users can disable or enable an existing feedback-form. Only one feedback form can be enabled at a time for a package.
-- **Responsive Design**: The application is designed to be responsive and accessible on various devices.
 
 ## Getting Started
 

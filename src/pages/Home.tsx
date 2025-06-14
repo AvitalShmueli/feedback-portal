@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Typography, Card, Layout, Table, Spin, Empty, Tag, Button, Space } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import styled from '@emotion/styled';
@@ -6,7 +6,8 @@ import CreateFormModal from '../components/CreateFormModal';
 import type { TableProps } from 'antd';
 import Filters, { FilterValues } from '../components/Filters';
 import { feedbackService, FeedbackItem } from '../services/FeedbackService';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom'; 
+import { debounce } from 'lodash';
 
 const { Title, Text } = Typography;
 const { Content, Footer } = Layout;
@@ -40,7 +41,103 @@ const Home: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState<boolean>(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const isInitialLoad = React.useRef(true);
+
+  const uiFilters = React.useMemo(() => {
+    return {
+      package_name: filters.package_name,
+      title: filters.title,
+      type: filters.type,
+      status: filters.is_active === true ? 'active' : 
+              filters.is_active === false ? 'inactive' : undefined
+    };
+  }, [filters]);
   
+
+    const fetchFeedbackItems = useCallback(async (filterValues = filters) => {
+    setLoading(true);
+    try {
+      const items = await feedbackService.searchFeedback(filterValues);
+      setFeedbackItems(items);
+    } catch (error) {
+      console.error('Error fetching feedback items:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+const handleFilterChange = useCallback((values: FilterValues) => {
+  // Convert status from string to boolean for the API
+  const apiValues = {
+    ...values,
+    is_active: values.status === 'active' ? true : 
+              values.status === 'inactive' ? false : undefined
+  };
+  
+  // Save the raw values for UI persistence
+  localStorage.setItem('feedbackFilters', JSON.stringify(values));
+  
+  // Set filters WITHOUT triggering a useEffect
+  setFilters(apiValues);
+  
+  // Directly fetch data with the new filters
+  fetchFeedbackItems(apiValues);
+}, [fetchFeedbackItems]);
+
+// Update debouncedFilterChange similarly
+const debouncedFilterChange = useCallback(
+  debounce((values: FilterValues) => {
+    // Convert status from string to boolean for the API
+    const apiValues = {
+      ...values,
+      is_active: values.status === 'active' ? true : 
+                values.status === 'inactive' ? false : undefined
+    };
+    
+    // Save the raw values for UI persistence
+    localStorage.setItem('feedbackFilters', JSON.stringify(values));
+    
+    // Set filters WITHOUT triggering a useEffect
+    setFilters(apiValues);
+    
+    // Directly fetch data with the new filters
+    fetchFeedbackItems(apiValues);
+  }, 300),
+  [fetchFeedbackItems]
+);
+
+
+useEffect(() => {
+  const shouldReloadFilters = location.state && (location.state as any).reloadFilters;
+  
+  if (shouldReloadFilters) {
+    const savedFilters = localStorage.getItem('feedbackFilters');
+    if (savedFilters) {
+      try {
+        const parsedFilters = JSON.parse(savedFilters);
+        
+        // Convert status values for API
+        const apiFilters = {
+          ...parsedFilters,
+          is_active: parsedFilters.status === 'active' ? true : 
+                    parsedFilters.status === 'inactive' ? false : undefined
+        };
+        
+        setFilters(apiFilters);
+      } catch (e) {
+        console.error('Error parsing saved filters:', e);
+        localStorage.removeItem('feedbackFilters');
+      }
+    }
+    
+    // Clear the flag from location state 
+    navigate(location.pathname, { replace: true, state: {} });
+  }
+}, [location.state, navigate, location.pathname]);
+
+
+
   const handleRowClick = (record: FeedbackItem) => {
     if (record._id && record.package_name) {
       navigate(`/feedback/${record.package_name}/${record._id}`, {
@@ -61,49 +158,57 @@ const Home: React.FC = () => {
     setIsCreateModalVisible(false);
   };
 
-  const handleFormCreated = () => {
-    fetchFeedbackItems();
-  };
-  useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        const packagesData = await feedbackService.getAllPackages();
-        setPackages(packagesData);
-      } catch (error) {
-        console.error('Error fetching package options:', error);
-      }
-    };
-    
-    fetchPackages();
-  }, []);
-
-const fetchFeedbackItems = async () => {
-  setLoading(true);
-  
-  try {
-    const searchParams = {
-      package_name: filters.packageName,
-      status: filters.status,
-      title: filters.searchQuery,
-      type: filters.feedbackType
-    };
-    
-    const items = await feedbackService.searchFeedback(searchParams);
-    setFeedbackItems(items);
-  } catch (error) {
-    console.error('Error fetching feedback:', error);
-  } finally {
-    setLoading(false);
-  }
+const handleFormCreated = () => {
+  // Refetch with current filters
+  fetchFeedbackItems(filters);
 };
-    
 useEffect(() => {
-  fetchFeedbackItems();
-}, [filters]);
-
-  const handleFilterChange = (newFilters: FilterValues) => {
-    setFilters(newFilters);
+  const initializeData = async () => {
+    setLoading(true);
+    
+    try {
+      // First load packages (needed for dropdown)
+      const packagesData = await feedbackService.getAllPackages();
+      setPackages(packagesData);
+      
+      // Check for saved filters
+      const savedFilters = localStorage.getItem('feedbackFilters');
+      let filtersToApply = {};
+      
+      if (savedFilters) {
+        try {
+          const parsedFilters = JSON.parse(savedFilters);
+          
+          // Convert status values for API
+          const apiFilters = {
+            ...parsedFilters,
+            is_active: parsedFilters.status === 'active' ? true : 
+                      parsedFilters.status === 'inactive' ? false : undefined
+          };
+          
+          filtersToApply = apiFilters;
+          // Set filters state silently (without triggering another fetch)
+          setFilters(filtersToApply);
+        } catch (e) {
+          console.error('Error parsing saved filters:', e);
+          localStorage.removeItem('feedbackFilters');
+        }
+      }
+      
+      // Fetch data directly
+      await fetchFeedbackItems(filtersToApply);
+      
+    } catch (error) {
+      console.error('Error initializing data:', error);
+      setLoading(false);
+    }
+    
+    isInitialLoad.current = false;
   };
+  
+  initializeData();
+}, [fetchFeedbackItems]);
+
 
   const formatDate =(dateString: string): string => {
     if (!dateString) return '';
@@ -195,8 +300,9 @@ useEffect(() => {
           <Card>
             <Space style={{ marginBottom: '16px', width: '100%', justifyContent: 'space-between' }}>
               <Filters 
-                onFilterChange={handleFilterChange}
+                onFilterChange={debouncedFilterChange}
                 packageOptions={packages}
+                initialValues={uiFilters}
               />
               <Button type="primary" icon={<PlusOutlined />} onClick={showCreateModal}>
                 Create Form

@@ -48,7 +48,7 @@ class ApiClient {
       // You might need to set up a proxy in your vite.config.ts
       const response: AxiosResponse<T> = await this.client.get(url, { 
         params,
-        // Add cache control to prevent caching issues
+        // Cache control to prevent caching issues
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',

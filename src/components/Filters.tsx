@@ -1,126 +1,90 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Select, Input, Space, Typography, Form } from 'antd';
-import { debounce } from 'lodash';
+import React, { useEffect } from "react";
+import { Form, Select, Input, Space } from "antd";
 
 const { Option } = Select;
-const { Text } = Typography;
-
-const feedbackTypeOptions = [
-  { label: 'Rating', value: 'rating' },
-  { label: 'Free Text', value: 'free_text' },
-  { label: 'Rating & Text', value: 'rating_text' }
-];
 
 export interface FilterValues {
-  packageName?: string;
+  package_name?: string;
+  title?: string;
   status?: string;
-  searchQuery?: string;
-  feedbackType?: string;
+  type?: string;
+  is_active?: boolean;
 }
 
 interface FiltersProps {
-  onFilterChange?: (filters: FilterValues) => void;
-  packageOptions?: string[];
+  onFilterChange: (values: FilterValues) => void;
+  packageOptions: string[];
+  initialValues?: FilterValues;
 }
 
-const Filters: React.FC<FiltersProps> = ({ onFilterChange, packageOptions = [] }) => {
-  const [filters, setFilters] = useState<FilterValues>({
-    packageName: undefined,
-    status: undefined,
-    searchQuery: '',
-    feedbackType: undefined,
-  });
-  
-  // Create a debounced function that will be stable between renders
-  const debouncedOnFilterChange = useCallback(
-    debounce((newFilters: FilterValues) => {
-      if (onFilterChange) {
-        onFilterChange(newFilters);
-      }
-    }, 1000), 
-    [onFilterChange]
-  );
+const Filters: React.FC<FiltersProps> = ({
+  onFilterChange,
+  packageOptions,
+  initialValues = {},
+}) => {
+  const [form] = Form.useForm();
 
-  const handleFilterChange = (key: keyof FilterValues, value: any) => {
-    const updatedFilters = { ...filters, [key]: value };
-    setFilters(updatedFilters);
-    
-    // Use debounced version only for search query
-    if (key === 'searchQuery') {
-      debouncedOnFilterChange(updatedFilters);
-    } else {
-      // For other filters, apply immediately
-      if (onFilterChange) {
-        onFilterChange(updatedFilters);
-      }
-    }
-  };
-
-  // Clean up the debounce on unmount
   useEffect(() => {
-    return () => {
-      debouncedOnFilterChange.cancel();
-    };
-  }, [debouncedOnFilterChange]);
+    console.log("Filters received new initialValues:", initialValues);
+    if (initialValues && Object.keys(initialValues).length > 0) {
+      const formValues = {
+        ...initialValues,
+        // Convert API is_active back to UI status if needed
+        status:
+          initialValues.is_active === true
+            ? "active"
+            : initialValues.is_active === false
+            ? "inactive"
+            : initialValues.status,
+      };
+      console.log("Setting form values:", formValues);
+      form.setFieldsValue(formValues);
+    }
+  }, [form, initialValues]);
 
-  const handleSearch = (value: string) => {
-    handleFilterChange('searchQuery', value);
+  const handleValuesChange = (changedValues: any, allValues: FilterValues) => {
+    onFilterChange(allValues);
   };
 
   return (
-    <Form layout="inline" style={{ marginBottom: 24 }}>
-      <Space direction="horizontal" size="middle" align="center" wrap style={{ width: '100%' }}>
-        <Text strong>Filter by:</Text>
-
-        <Select 
-            placeholder="Select package" 
-            style={{ minWidth: 300 }} 
-            allowClear
-            onChange={(value) => handleFilterChange('packageName', value)}
-            value={filters.packageName}
-            >
-            {packageOptions.map((pkg) => (
-                <Option key={pkg} value={pkg}>
-                {pkg}
-                </Option>
-            ))}
-        </Select>
-
-        <Select 
-          placeholder="Select status" 
-          style={{ minWidth: 160 }}
+    <Form
+      form={form}
+      layout="inline"
+      onValuesChange={handleValuesChange}
+      style={{ flexWrap: "wrap", gap: "8px" }}
+    >
+      <Form.Item name="package_name" label="Package Name">
+        <Select
           allowClear
-          onChange={(value) => handleFilterChange('status', value)}
-          value={filters.status}
+          style={{ width: 200 }}
+          placeholder="Select package name"
         >
-          <Option value="active">Active</Option>
-          <Option value="inactive">Inactive</Option>
-        </Select>
-
-        <Select 
-          placeholder="Select feedback type" 
-          style={{ minWidth: 180 }}
-          allowClear
-          onChange={(value) => handleFilterChange('feedbackType', value)}
-          value={filters.feedbackType}
-        >
-          {feedbackTypeOptions.map((type) => (
-            <Option key={type.value} value={type.value}>
-              {type.label}
+          {packageOptions.map((pkg) => (
+            <Option key={pkg} value={pkg}>
+              {pkg}
             </Option>
           ))}
         </Select>
-        
-        <Input.Search
-          placeholder="Search by title"
-          allowClear
-          style={{ minWidth: 240 }}
-          onSearch={handleSearch}
-          onChange={(e) => handleFilterChange('searchQuery', e.target.value)}
-          value={filters.searchQuery}
-        />
+      </Form.Item>
 
-      </Space>
+      <Form.Item name="title" label="Title">
+        <Input placeholder="Search by title" style={{ width: 200 }} />
+      </Form.Item>
+
+      <Form.Item name="status" label="Status">
+        <Select allowClear style={{ width: 120 }} placeholder="Status">
+          <Option value="active">Active</Option>
+          <Option value="inactive">Inactive</Option>
+        </Select>
+      </Form.Item>
+
+      <Form.Item name="type" label="Type">
+        <Select allowClear style={{ width: 150 }} placeholder="Form type">
+          <Option value="rating">Rating</Option>
+          <Option value="free_text">Free Text</Option>
+          <Option value="rating_text">Rating & Text</Option>
+        </Select>
+      </Form.Item>
     </Form>
   );
 };
