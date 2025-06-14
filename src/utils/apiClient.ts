@@ -8,12 +8,11 @@ class ApiClient {
   constructor() {
     // Create axios instance with default config
     this.client = axios.create({
-      baseURL: '/api',
+      baseURL: 'https://feedback-backend-one.vercel.app',
       headers: {
         'Content-Type': 'application/json',
         // Adding these headers can help with some CORS issues
-        'Accept': 'application/json',
-        'Access-Control-Allow-Origin': '*',
+        'Accept': 'application/json'
       },
       // Setting withCredentials to true if your API requires cookies/auth
       // withCredentials: true,
