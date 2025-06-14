@@ -215,12 +215,12 @@ const FeedbackEntries: React.FC = () => {
                   <Card style={{ marginTop: 32 }}>
                     <Statistic 
                       title="Average Rating" 
-                      value={statistics.average_rating.toFixed(1)} 
+                      value={statistics.average_rating} 
                       suffix={
                         <Rate 
-                        disabled 
+                        disabled
                         allowHalf 
-                        defaultValue={statistics.average_rating} 
+                         value={Math.round(statistics.average_rating * 2) / 2} 
                         style={{ fontSize: '16px', marginLeft: '8px' }} 
                         />
                       } 
