@@ -293,7 +293,9 @@ useEffect(() => {
   return (
     <>
       <StyledHeader>
-        <HeaderTitle level={2}>Feedback Portal</HeaderTitle>
+        <HeaderTitle level={2} style={{display: 'flex',alignItems: 'center',gap: '12px',}}>
+          <img src="/favicon.svg" alt="logo" style={{ width: 48, height: 48 }} />
+        Feedback Portal</HeaderTitle>
       </StyledHeader>
       <Layout style={{ padding: '24px', display: 'flex', flexDirection: 'column', background: '#f9f0ff' }}>
         <Content style={{ flex: '1 0 auto' }}>
