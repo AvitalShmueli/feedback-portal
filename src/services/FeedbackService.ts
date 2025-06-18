@@ -126,7 +126,7 @@ export class FeedbackService {
     formId: string
   ): Promise<FeedbackStatistics> {
     try {
-      const url = `/feedback/stats/${packageName}`;
+      const url = `/feedback/${packageName}/stats`;
       const response = await apiClient.get<FeedbackStatistics>(url, {
         form_id: formId,
       });
