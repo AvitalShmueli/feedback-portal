@@ -300,7 +300,7 @@ useEffect(() => {
       <Layout style={{ padding: '24px', display: 'flex', flexDirection: 'column', background: '#f9f0ff' }}>
         <Content style={{ flex: '1 0 auto' }}>
           <Card>
-            <Space style={{ marginBottom: '16px', width: '100%', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex',justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
               <Filters 
                 onFilterChange={debouncedFilterChange}
                 packageOptions={packages}
@@ -309,7 +309,7 @@ useEffect(() => {
               <Button type="primary" icon={<PlusOutlined />} onClick={showCreateModal}>
                 Create Form
               </Button>
-            </Space>
+            </div>
             <div>
               {loading ? (
                 <div style={{ textAlign: 'center', padding: '40px 0' }}>
