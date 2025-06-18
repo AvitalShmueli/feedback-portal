@@ -5,7 +5,7 @@ The Feedback Portal is a web application built using React and Vite that allows 
 ## Features
 
 - **Feedback Form Creation**: Users can create a new feedback-form through a user-friendly form.
-- **Feedbacks Overview**: A dashboard that displays all submitted feedbacks, allowing users to review and analyze feedback data.
+- **Feedbacks Overview**: A dashboard that displays all submitted feedbacks, allowing users to review and analyze feedback data using various filters.
 - **Disable/Enable Feedback Form**: Users can disable or enable an existing feedback-form. Only one feedback form can be enabled at a time for a package.
 
 ## Getting Started
